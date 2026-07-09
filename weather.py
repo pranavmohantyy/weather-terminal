@@ -9,12 +9,27 @@ def get_weather(city):
     weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current_weather=true"
     weather_response = requests.get(weather_url)
     current_weather = weather_response.json()['current_weather']
+    wmo_code = current_weather['weathercode']
+    description = get_weather_description(wmo_code)
     return {
         'temperature': current_weather['temperature'],
         'wind_speed': current_weather['windspeed'],
-        'weather_code': current_weather['weathercode']
+        'description': description
     }
 
-if __name__ == '__main__':
-    city = input("Enter city name: ")
-    print(get_weather(city))
+
+def get_weather_description(wmo_code):
+    descriptions = {
+        0: "clear sky",
+        1: "mainly clear",
+        2: "partly cloudy",
+        3: "overcast",
+        45: "fog",
+        48: "fog",
+        61: "drizzle",
+        63: "rain",
+        80: "rain showers",
+        95: "thunderstorm",
+        99: "thunderstorm with hail"
+    }
+    return descriptions.get(wmo_code, "unknown")
