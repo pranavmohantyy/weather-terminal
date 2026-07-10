@@ -6,30 +6,36 @@ def get_weather(city):
     location = response.json()['results'][0]
     latitude = location['latitude']
     longitude = location['longitude']
-    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current_weather=true"
+    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto"
     weather_response = requests.get(weather_url)
     current_weather = weather_response.json()['current_weather']
     wmo_code = current_weather['weathercode']
     description = get_weather_description(wmo_code)
-    return {
-        'temperature': current_weather['temperature'],
-        'wind_speed': current_weather['windspeed'],
-        'description': description
-    }
+    forecast = weather_response.json()['daily']
+    daily_forecast = [
+        {
+            'date': forecast['time'][i],
+            'high': forecast['temperature_2m_max'][i],
+            'low': forecast['temperature_2m_min'][i],
+            'precipitation': forecast['precipitation_probability_max'][i],
+            'condition': get_weather_description(forecast['weathercode'][i])
+        }
+        for i in range(len(forecast['time']))
+    ]
+    return current_weather, description, daily_forecast
 
 
 def get_weather_description(wmo_code):
     descriptions = {
-        0: "clear sky",
-        1: "mainly clear",
-        2: "partly cloudy",
-        3: "overcast",
-        45: "fog",
-        48: "fog",
-        61: "drizzle",
-        63: "rain",
-        80: "rain showers",
-        95: "thunderstorm",
-        99: "thunderstorm with hail"
+        0: "Clear sky",
+        1: "Mainly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Deposit of fog",
+        61: "Rain showers",
+        63: "Rain",
+        80: "Rain showers",
+        95: "Thunderstorm"
     }
-    return descriptions.get(wmo_code, "unknown")
+    return descriptions.get(wmo_code, "Unknown weather")
