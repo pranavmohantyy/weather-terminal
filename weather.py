@@ -1,1 +1,26 @@
-import requests\nimport argparse\nimport json\n\ndef get_weather(city, units='metric'):\n    geocoding_url = f"https://api.open-meteo.com/v1/search?name={city}"\n    response = requests.get(geocoding_url)\n    location = response.json()['results'][0]\n    latitude = location['latitude']\n    longitude = location['longitude']\n    unit_param = 'metric' if units == 'metric' else 'imperial'\n    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&hourly=temperature_2m,weathercode,windspeed_10m&timezone=auto"\n    weather_response = requests.get(weather_url)\n    current_weather = weather_response.json()['hourly']\n    temperature = current_weather['temperature_2m'][0]\n    weather_code = current_weather['weathercode'][0]\n    wind_speed = current_weather['windspeed_10m'][0]\n    wind_direction = get_wind_direction(weather_response.json()['hourly']['winddirection_10m'][0])\n    return temperature, weather_code, wind_speed, wind_direction\n\ndef get_wind_direction(degrees):\n    if degrees >= 337.5 or degrees < 22.5:\n        return 'N'\n    elif degrees < 67.5:\n        return 'NE'\n    elif degrees < 112.5:\n        return 'E'\n    elif degrees < 157.5:\n        return 'SE'\n    elif degrees < 202.5:\n        return 'S'\n    elif degrees < 247.5:\n        return 'SW'\n    elif degrees < 292.5:\n        return 'W'\n    else:\n        return 'NW'\n\ndef main():\n    parser = argparse.ArgumentParser(description='Weather terminal app')\n    parser.add_argument('city', type=str, help='City name')\n    parser.add_argument('--units', type=str, choices=['metric', 'imperial'], default='metric', help='Units of measurement')\n    args = parser.parse_args()\n    temperature, weather_code, wind_speed, wind_direction = get_weather(args.city, args.units)\n    print(f'Temperature: {temperature}°{args.units}\nWeather Code: {weather_code}\nWind Speed: {wind_speed} m/s\nWind Direction: {wind_direction}')\n\nif __name__ == '__main__':\n    main()
+import requests
+import argparse
+import json
+
+def get_weather(city, units='metric'):
+    geocoding_url = f"https://api.open-meteo.com/v1/search?name={city}"
+    response = requests.get(geocoding_url)
+    location = response.json()['results'][0]
+    latitude = location['latitude']
+    longitude = location['longitude']
+    unit_param = 'metric' if units == 'metric' else 'imperial'
+    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&hourly=temperature_2m,weathercode,windspeed_10m&timezone=auto"
+    weather_response = requests.get(weather_url)
+    weather_data = weather_response.json()
+    return weather_data
+
+def main():
+    parser = argparse.ArgumentParser(description='Get weather information')
+    parser.add_argument('city', type=str, help='City name to get the weather for')
+    parser.add_argument('--units', type=str, default='metric', choices=['metric', 'imperial'], help='Units of measurement')
+    args = parser.parse_args()
+    weather = get_weather(args.city, args.units)
+    print(json.dumps(weather, indent=2))
+
+if __name__ == '__main__':
+    main()
